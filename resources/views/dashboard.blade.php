@@ -12,6 +12,25 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
+    <form method="get" action="{{ route('dashboard') }}" class="row g-2 mb-4">
+        <div class="col-md-6">
+            <input type="text" name="q" value="{{ $q ?? '' }}" class="form-control" placeholder="Rechercher un titre ou une description">
+        </div>
+        <div class="col-md-4">
+            <select name="status" class="form-select">
+                @php $statuses = ['', 'Soumise', 'En étude', 'Validée', 'Rejetée']; @endphp
+                @foreach($statuses as $s)
+                    <option value="{{ $s }}" @if(($status ?? '') === $s) selected @endif>
+                        {{ $s === '' ? 'Tous les statuts' : $s }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+        </div>
+    </form>
+
     @php
         $badgeClass = [
             'Soumise' => 'bg-secondary',
@@ -22,7 +41,7 @@
     @endphp
 
     @if($ideas->isEmpty())
-        <p>Aucune idée pour le moment.</p>
+        <p>Aucune idée trouvée.</p>
     @else
         <div class="table-responsive">
             <table class="table align-middle">
@@ -62,7 +81,7 @@
         </div>
 
         <div class="mt-3">
-            {{ $ideas->links() }}
+            {{ $ideas->appends(request()->only(['q','status']))->links() }}
         </div>
     @endif
 @endsection

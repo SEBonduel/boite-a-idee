@@ -8,13 +8,29 @@ use Illuminate\Support\Facades\Auth;
 
 class IdeaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $ideas = Idea::where('user_id', Auth::id())
-            ->latest()
-            ->paginate(10);
+        $q = $request->string('q')->toString();
+        $status = $request->string('status')->toString();
 
-        return view('dashboard', compact('ideas'));
+        $ideas = Idea::where('user_id', Auth::id())
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('title', 'like', "%{$q}%")->orWhere('description', 'like', "%{$q}%");
+                });
+            })
+            ->when($status, function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('dashboard', [
+            'ideas' => $ideas,
+            'q' => $q,
+            'status' => $status,
+        ]);
     }
 
     public function create()
@@ -37,9 +53,7 @@ class IdeaController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        return redirect()
-            ->route('dashboard')
-            ->with('success', 'Idée créée avec succès.');
+        return redirect()->route('dashboard')->with('success', 'Idée créée avec succès.');
     }
 
     public function edit(Idea $idea)
@@ -60,9 +74,7 @@ class IdeaController extends Controller
 
         $idea->update($data);
 
-        return redirect()
-            ->route('dashboard')
-            ->with('success', 'Idée mise à jour.');
+        return redirect()->route('dashboard')->with('success', 'Idée mise à jour.');
     }
 
     public function destroy(Idea $idea)
@@ -71,8 +83,6 @@ class IdeaController extends Controller
 
         $idea->delete();
 
-        return redirect()
-            ->route('dashboard')
-            ->with('success', 'Idée supprimée.');
+        return redirect()->route('dashboard')->with('success', 'Idée supprimée.');
     }
 }
